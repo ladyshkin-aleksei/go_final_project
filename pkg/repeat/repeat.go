@@ -1,4 +1,3 @@
-// go_final_project/pkg/repeat/repeat.go
 package repeat
 
 import (
@@ -8,15 +7,12 @@ import (
 	"fmt"
 )
 
-// NextDate вычисляет следующую дату выполнения задачи согласно правилу повторения
 func NextDate(now time.Time, dateStr, repeatStr string) (string, error) {
-	// Парсим исходную дату
 	date, err := time.Parse("20060102", dateStr)
 	if err != nil {
 		return "", err
 	}
 
-	// Если правила повторения нет, возвращаем исходную дату
 	if repeatStr == "" {
 		return dateStr, nil
 	}
@@ -27,7 +23,7 @@ func NextDate(now time.Time, dateStr, repeatStr string) (string, error) {
 		if len(parts) != 1 {
 			return "", fmt.Errorf("некорректный формат правила 'y'")
 		}
-		// Повторять ежегодно — прибавляем год
+
 		next := date.AddDate(1, 0, 0)
 		return next.Format("20060102"), nil
 
@@ -39,7 +35,7 @@ func NextDate(now time.Time, dateStr, repeatStr string) (string, error) {
 		if err != nil || days <= 0 || days > 400 {
 			return "", fmt.Errorf("некорректное количество дней в правиле 'd'")
 		}
-		// Повторять каждые N дней
+
 		next := date.AddDate(0, 0, days)
 		return next.Format("20060102"), nil
 
