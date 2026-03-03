@@ -18,6 +18,7 @@ import (
 var Port = 7540
 
 func init() {
+
 	// Проверяем переменную окружения TODO_PORT
 	if portStr := os.Getenv("TODO_PORT"); portStr != "" {
 		if port, err := strconv.Atoi(portStr); err == nil {

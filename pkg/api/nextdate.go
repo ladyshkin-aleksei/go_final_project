@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 	"time"
+
+	"go_final_project/pkg/repeat"
 )
 
 const (
@@ -10,8 +12,12 @@ const (
 )
 
 // nextDateHandler обрабатывает запросы к /api/nextdate
+// URL-параметры:
+// - now (опционально): текущая дата в формате "20060102", по умолчанию — текущая дата
+// - date (обязательно): исходная дата задачи в формате "20060102"
+// - repeat (обязательно): правило повторения (например, "y" или "d 7")
 func nextDateHandler(w http.ResponseWriter, r *http.Request) {
-	// Получаем параметры из GET-запроса
+	// Получаем параметры из GET‑запроса
 	nowStr := r.FormValue("now")
 	dateStr := r.FormValue("date")
 	repeatStr := r.FormValue("repeat")
@@ -26,7 +32,7 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "некорректный формат параметра now", http.StatusBadRequest)
 			return
-		}
+	}
 	}
 
 	// Проверяем, что обязательные параметры date и repeat переданы
@@ -39,7 +45,7 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Вызываем функцию расчёта следующей даты
+	// Вызываем функцию расчёта следующей даты из пакета repeat
 	nextDate, err := repeat.NextDate(now, dateStr, repeatStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -47,6 +53,12 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем результат в формате 20060102
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(nextDate))
+}
+
+// RegisterNextDateHandler регистрирует обработчик для маршрута /api/nextdate
+func RegisterNextDateHandler() {
+	http.HandleFunc("/api/nextdate", nextDateHandler)
 }

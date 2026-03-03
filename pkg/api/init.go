@@ -2,8 +2,10 @@ package api
 
 import "net/http"
 
-func Init() {
+func Init() error {
 	http.HandleFunc("/api/task", taskHandler)
+	// Здесь можно добавить другие обработчики
+	return nil
 }
 
 func taskHandler(w http.ResponseWriter, r *http.Request) {

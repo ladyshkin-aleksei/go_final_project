@@ -1,66 +1,49 @@
-package task
+// go_final_project/pkg/repeat/repeat.go
+package repeat
 
 import (
 	"strconv"
 	"strings"
 	"time"
+	"fmt"
 )
 
-// AddTask добавляет задачу с проверкой валидности данных.
-// Возвращает true, если задача валидна и может быть добавлена, иначе false.
-func AddTask(now time.Time, date string, title string, repeat string) bool {
-	// Парсим дату задачи
-	taskDate, err := time.Parse("20060102", date)
+// NextDate вычисляет следующую дату выполнения задачи согласно правилу повторения
+func NextDate(now time.Time, dateStr, repeatStr string) (string, error) {
+	// Парсим исходную дату
+	date, err := time.Parse("20060102", dateStr)
 	if err != nil {
-		return false
+		return "", err
 	}
 
-	// Нормализуем now и taskDate до начала дня (убираем время)
-	nowTrunc := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	taskDateTrunc := time.Date(taskDate.Year(), taskDate.Month(), taskDate.Day(), 0, 0, 0, 0, taskDate.Location())
-
-	// Проверяем, что дата задачи не раньше текущей даты
-	if taskDateTrunc.Before(nowTrunc) {
-		return false
+	// Если правила повторения нет, возвращаем исходную дату
+	if repeatStr == "" {
+		return dateStr, nil
 	}
 
-	// Если правило повторения пустое — валидно
-	if repeat == "" {
-		return true
-	}
-
-	// Разбиваем правило на части
-	parts := strings.Split(repeat, " ")
-
+	parts := strings.Split(repeatStr, " ")
 	switch parts[0] {
 	case "y":
-		// Правило 'y' должно быть единственным словом
 		if len(parts) != 1 {
-			return false
+			return "", fmt.Errorf("некорректный формат правила 'y'")
 		}
-		return true
+		// Повторять ежегодно — прибавляем год
+		next := date.AddDate(1, 0, 0)
+		return next.Format("20060102"), nil
 
 	case "d":
-		// Правило 'd' должно иметь ровно два слова: 'd' и число
 		if len(parts) != 2 {
-			return false
+			return "", fmt.Errorf("некорректный формат правила 'd'")
 		}
-
 		days, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return false
+		if err != nil || days <= 0 || days > 400 {
+			return "", fmt.Errorf("некорректное количество дней в правиле 'd'")
 		}
-
-		if days <= 0 {
-			return false
-		}
-		if days > 400 {
-			return false
-		}
-		return true
+		// Повторять каждые N дней
+		next := date.AddDate(0, 0, days)
+		return next.Format("20060102"), nil
 
 	default:
-		// Любое другое правило — ошибка
-		return false
+		return "", fmt.Errorf("неизвестное правило повторения: %s", parts[0])
 	}
 }

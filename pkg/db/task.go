@@ -6,13 +6,12 @@ import (
 )
 
 type Task struct {
-	ID      string `json:"id"`
+	ID      int64  `json:"id"`  // Изменено с string на int64
 	Date    string `json:"date"`
 	Title   string `json:"title"`
 	Comment string `json:"comment"`
 	Repeat  string `json:"repeat"`
 }
-
 // CheckDate — экспортируемая функция для проверки и корректировки даты задачи
 func CheckDate(task *Task) error {
 	now := time.Now()
@@ -45,6 +44,7 @@ func CheckDate(task *Task) error {
 			task.Date = now.Format("20060102")
 	}
 	}
+	
 
 	return nil
 }
@@ -57,7 +57,7 @@ func NextDate(now time.Time, date, repeat string) (string, error) {
 
 // afterNow проверяет, что дата больше текущей
 func afterNow(now, t time.Time) bool {
-	return t.Before(now)
+	return t.Before(now) // true, если дата t раньше now
 }
 
 func AddTask(task *Task) (int64, error) {
