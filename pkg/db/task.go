@@ -1,8 +1,11 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
+	"strconv"
+	"strings"
 )
 
 type Task struct {
@@ -39,7 +42,6 @@ func CheckDate(task *Task) error {
 			task.Date = now.Format("20060102")
 	}
 	}
-	
 
 	return nil
 }
@@ -96,4 +98,86 @@ func Tasks(limit int) ([]*Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func GetTask(id string) (*Task, error) {
+	query := `
+		SELECT id, date, title, comment, repeat
+		FROM scheduler
+		WHERE id = ?
+	`
+
+	task := &Task{}
+	err := db.QueryRow(query, id).Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("Задача не найдена")
+		}
+		return nil, fmt.Errorf("ошибка получения задачи: %w", err)
+	}
+
+	return task, nil
+}
+
+func UpdateTask(task *Task) error {
+	if err := ValidateTask(task); err != nil {
+		return err
+	}
+
+	query := `
+		UPDATE scheduler
+		SET date = ?, title = ?, comment = ?, repeat = ?
+		WHERE id = ?
+	`
+
+	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	if err != nil {
+		return fmt.Errorf("ошибка обновления задачи: %w", err)
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("ошибка проверки количества изменённых записей: %w", err)
+	}
+
+	if count == 0 {
+		return fmt.Errorf("Задача не найдена")
+	}
+
+	return nil
+}
+
+func ValidateTask(task *Task) error {
+	if task.Title == "" {
+		return fmt.Errorf("Не указан заголовок задачи")
+	}
+
+	_, err := time.Parse("20060102", task.Date)
+	if err != nil {
+		return fmt.Errorf("некорректный формат даты: %s", task.Date)
+	}
+
+	if task.Repeat != "" {
+		if !isValidRepeat(task.Repeat) {
+			return fmt.Errorf("некорректное правило повторения: %s", task.Repeat)
+		}
+	}
+
+	return nil
+}
+
+func isValidRepeat(repeat string) bool {
+	parts := strings.Split(repeat, " ")
+	if len(parts) != 2 {
+		return false
+	}
+
+	unit := parts[0]
+	validUnits := map[string]bool{"d": true, "w": true, "m": true, "y": true}
+	if !validUnits[unit] {
+		return false
+	}
+
+	_, err := strconv.Atoi(parts[1])
+	return err == nil
 }
